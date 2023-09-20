@@ -109,6 +109,16 @@ namespace ConversionLogic
                .WithIdentifier(SyntaxFactory.Identifier("_Process"));
             }
 
+            // Convert Unity's Update method to Godot's _Process method.
+            else if (node.Identifier.Text == "Awake")
+            {
+                node = node
+               .WithModifiers(SyntaxFactory.TokenList(
+                   SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                   SyntaxFactory.Token(SyntaxKind.OverrideKeyword)))
+               .WithIdentifier(SyntaxFactory.Identifier("_EnterTree"));
+            }
+
             // Visit the method body and replace "Debug.Log" with "GD.Print"
             var newBody = (BlockSyntax)Visit(node.Body);
 
