@@ -27,6 +27,13 @@ namespace ConversionLogic
             // Add more mappings as needed.
         };
 
+        private static readonly Dictionary<string, string> VariableMapping = new Dictionary<string, string>()
+        {
+             { "transform", "Transform" },
+             {"position", "Origin" }
+        };
+
+
         /// <summary>
         /// Converts Unity C# code to Godot C# code.
         /// </summary>
@@ -126,6 +133,30 @@ namespace ConversionLogic
             return node.WithBody(newBody);
         }
 
+        // Overrides the method to handle member access expressions and replaces Unity-specific access with Godot ones
+        public override SyntaxNode VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
+        {
+            // Check if it's accessing "transform.position.x" or "transform.position.y"
+            if (node.Expression is MemberAccessExpressionSyntax parentExpression &&
+                parentExpression.Expression is MemberAccessExpressionSyntax grandparentExpression &&
+                grandparentExpression.Expression.ToString() == "transform" &&
+                grandparentExpression.Name.Identifier.Text == "position")
+            {
+                if (node.Name.Identifier.Text == "x")
+                {
+                    // Replace with "Transform.Origin.X"
+                    return SyntaxFactory.ParseExpression("Transform.Origin.X");
+                }
+                else if (node.Name.Identifier.Text == "y")
+                {
+                    // Replace with "Transform.Origin.Y"
+                    return SyntaxFactory.ParseExpression("Transform.Origin.Y");
+                }
+            }
+
+            return base.VisitMemberAccessExpression(node);
+        }
+
         /// <summary>
         /// Overrides the method to handle invocation expressions and replaces
         /// Unity specific calls with Godot ones
@@ -134,20 +165,58 @@ namespace ConversionLogic
         /// <returns>The modified syntax node.</returns>
         public override SyntaxNode VisitInvocationExpression(InvocationExpressionSyntax node)
         {
-            // Check if it's a MemberAccessExpression with "Debug.Log"
-            if (node.Expression is MemberAccessExpressionSyntax memberAccess &&
-                memberAccess.Expression.ToString() == "Debug" &&
-                memberAccess.Name.Identifier.Text == "Log")
+            var args = node.ArgumentList;
+            if (node.Expression is MemberAccessExpressionSyntax memberAccess)
             {
-                // Replace "Debug.Log" with "GD.Print"
-                return SyntaxFactory.ParseExpression($"GD.Print{node.ArgumentList}");
-            }
+                // Create a list to store the updated arguments
+                var updatedArguments = new List<ArgumentSyntax>();
 
+                // Iterate through the arguments
+                foreach (var argument in node.ArgumentList.Arguments)
+                {
+                    // Check if the argument is a MemberAccessExpression representing "transform.position.x"
+                    if (argument.Expression is MemberAccessExpressionSyntax argumentMemberAccess)
+                    {
+
+                        var expressionParts = argumentMemberAccess.ToString().Split(".");
+                        String newExpression = "";
+                        foreach (String expressionPart in expressionParts)
+                        {
+                            if (VariableMapping.ContainsKey(expressionPart))
+                            {
+                                newExpression += (VariableMapping[expressionPart] + ".");
+                            }
+                            else
+                            {
+                                newExpression += expressionPart.ToUpperInvariant();
+                            }
+                        }
+                        updatedArguments.Add(SyntaxFactory.Argument(SyntaxFactory.ParseExpression($"{newExpression}")));
+                    }
+                    else
+                    {
+                        // If not, keep the original argument
+                        updatedArguments.Add(argument);
+                    }
+                    // Create a new argument list with the updated arguments
+
+                    // Create a new expression with the updated argument list
+                    args = SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(updatedArguments));
+                }
+                // Check if it's a MemberAccessExpression with "Debug.Log"
+                if (
+                    memberAccess.Expression.ToString() == "Debug" &&
+                    memberAccess.Name.Identifier.Text == "Log")
+                {
+                    // Replace "Debug.Log" with "GD.Print"
+                    return SyntaxFactory.ParseExpression($"GD.Print{args}");
+                }
+            }
             // Check if it's a GetComponent call
             if (node.Expression.ToString() == "GetComponent")
             {
                 // Get the type argument from GetComponent<T>()
-                TypeSyntax typeArgument = node.ArgumentList.Arguments.FirstOrDefault()?.Expression as TypeSyntax;
+                TypeSyntax typeArgument = args.Arguments.FirstOrDefault()?.Expression as TypeSyntax;
 
                 if (typeArgument != null)
                 {
@@ -156,21 +225,10 @@ namespace ConversionLogic
                     string newNodeExpression = $"GetNode<{typeName}>(\"PathToNode\")";
 
                     // Create a new expression
-                    ExpressionSyntax newNode = SyntaxFactory.ParseExpression(newNodeExpression);
-
-                    return newNode;
+                    return SyntaxFactory.ParseExpression(newNodeExpression);
                 }
             }
-
             return base.VisitInvocationExpression(node);
-        }
-
-        private bool IsInputRelatedStatement(StatementSyntax statement)
-        {
-            // Implement your logic to identify input-related statements here.
-            // For example, you can check if the statement contains "Input.GetKeyDown" or other input-related calls.
-            // Return true if it's input-related, false otherwise.
-            return false; /* Your input-related statement identification logic */;
         }
     }
 }

@@ -18,6 +18,8 @@
   <ItemGroup>
     <Compile Remove="TestData\01-Hello World\HelloWorldGodot.cs" />
     <Compile Remove="TestData\01-Hello World\HelloWorldUnity.cs" />
+    <Compile Remove="TestData\02-Transform\BasicSyntaxGodot.cs" />
+    <Compile Remove="TestData\02-Transform\BasicSyntaxUnity.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -39,6 +41,12 @@
     </None>
     <None Include="TestData\01-Hello World\HelloWorldUnity.cs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="TestData\02-Transform\BasicSyntaxGodot.cs">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="TestData\02-Transform\BasicSyntaxUnity.cs">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 

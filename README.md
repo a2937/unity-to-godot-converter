@@ -44,7 +44,7 @@ This tool is designed to help you convert Unity scripts to Godot scripts, making
 
   ```bash
     .\UnityToGodotConverterConsole.exe
-  `
+  ```
 
   or 
 
