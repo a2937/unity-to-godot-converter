@@ -20,6 +20,8 @@
     <Compile Remove="TestData\01-Hello World\HelloWorldUnity.cs" />
     <Compile Remove="TestData\02-Transform\BasicSyntaxGodot.cs" />
     <Compile Remove="TestData\02-Transform\BasicSyntaxUnity.cs" />
+    <Compile Remove="TestData\03-FixedUpdate\GodotUpdateAndFixedUpdate.cs" />
+    <Compile Remove="TestData\03-FixedUpdate\UnityUpdateAndFixedUpdate.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -46,6 +48,12 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="TestData\02-Transform\BasicSyntaxUnity.cs">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="TestData\03-FixedUpdate\GodotUpdateAndFixedUpdate.cs">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="TestData\03-FixedUpdate\UnityUpdateAndFixedUpdate.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

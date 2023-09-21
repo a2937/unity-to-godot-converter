@@ -30,7 +30,9 @@ namespace ConversionLogic
         private static readonly Dictionary<string, string> VariableMapping = new Dictionary<string, string>()
         {
              { "transform", "Transform" },
-             {"position", "Origin" }
+             {"position", "Origin" },
+             {"Time", "" },
+             {"deltaTime", "delta" }
         };
 
 
@@ -109,10 +111,14 @@ namespace ConversionLogic
             // Convert Unity's Update method to Godot's _Process method.
             else if (node.Identifier.Text == "Update")
             {
+                ParameterSyntax deltaParameter = SyntaxFactory.Parameter(SyntaxFactory.Identifier("delta"))
+    .WithType(SyntaxFactory.ParseTypeName("double"));
+
                 node = node
                .WithModifiers(SyntaxFactory.TokenList(
                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
                    SyntaxFactory.Token(SyntaxKind.OverrideKeyword)))
+               .AddParameterListParameters(deltaParameter)
                .WithIdentifier(SyntaxFactory.Identifier("_Process"));
             }
 
@@ -124,6 +130,21 @@ namespace ConversionLogic
                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
                    SyntaxFactory.Token(SyntaxKind.OverrideKeyword)))
                .WithIdentifier(SyntaxFactory.Identifier("_EnterTree"));
+            }
+
+
+
+
+            else if (node.Identifier.Text == "FixedUpdate")
+            {
+                ParameterSyntax deltaParameter = SyntaxFactory.Parameter(SyntaxFactory.Identifier("delta"))
+ .WithType(SyntaxFactory.ParseTypeName("double"));
+                node = node
+               .WithModifiers(SyntaxFactory.TokenList(
+                   SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                   SyntaxFactory.Token(SyntaxKind.OverrideKeyword)))
+               .AddParameterListParameters(deltaParameter)
+               .WithIdentifier(SyntaxFactory.Identifier("_PhysicsProcess"));
             }
 
             // Visit the method body and replace "Debug.Log" with "GD.Print"

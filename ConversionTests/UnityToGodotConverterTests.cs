@@ -23,6 +23,7 @@ namespace ConversionTests
         [Theory]
         [InlineData("TestData/01-Hello World/HelloWorldUnity.cs", "TestData/01-Hello World/HelloWorldGodot.cs")]
         [InlineData("TestData/02-Transform/BasicSyntaxUnity.cs", "TestData/02-Transform/BasicSyntaxGodot.cs")]
+        [InlineData("TestData/03-FixedUpdate/UnityUpdateAndFixedUpdate.cs.cs", "TestData/03-FixedUpdate/GodotUpdateAndFixedUpdate.cs")]
         public void ConversionProperlyWorks(string inputFilePath, string expectedFilePath)
         {
             // Arrange: Read input and expected output from files.
