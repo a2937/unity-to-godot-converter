@@ -22,7 +22,10 @@ namespace ConversionTests
         /// <param name="expectedFilePath">The file path to the expected Godot code.</param>
         [Theory]
         [InlineData("TestData/01-Hello World/HelloWorldUnity.cs", "TestData/01-Hello World/HelloWorldGodot.cs")]
-        [InlineData("TestData/02-Transform/BasicSyntaxUnity.cs", "TestData/02-Transform/BasicSyntaxGodot.cs")]
+        [InlineData("TestData/02-Life Cycle/LifeCycleUnity.cs", "TestData/02-Life Cycle/LifeCycleGodot.cs")]
+        [InlineData("TestData/03-Transform/BasicSyntaxUnity.cs", "TestData/03-Transform/BasicSyntaxGodot.cs")]
+        [InlineData("TestData/04-Sprites/SpriteUseUnity.cs", "TestData/04-Sprites/SpriteUseGodot.cs")]
+        [InlineData("TestData/05-Components/UseComponentUnity.cs", "TestData/05-Components/UseComponentGodot.cs")]
         public void ConversionProperlyWorks(string inputFilePath, string expectedFilePath)
         {
             // Arrange: Read input and expected output from files.

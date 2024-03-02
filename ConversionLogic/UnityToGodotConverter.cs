@@ -1,6 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System.Security.AccessControl;
 
 namespace ConversionLogic
 {
@@ -27,12 +28,40 @@ namespace ConversionLogic
             // Add more mappings as needed.
         };
 
+        /// <summary>
+        /// A dictionary that maps Unity variable classes
+        /// to their closest equivalents. 
+        /// </summary>
         private static readonly Dictionary<string, string> VariableMapping = new Dictionary<string, string>()
         {
              { "transform", "Transform" },
-             {"position", "Origin" }
+             {"position", "Origin" },
+             { "Sprite", "Texture2D" },
+             { "SpriteRenderer","Sprite2D" },
+             { "sprite","texture" }
         };
 
+
+        /// <summary>
+        /// A dictionary that maps Unity methods
+        /// to their closest equivalents. 
+        /// </summary>
+        private static readonly Dictionary<string, string> MethodMapping = new Dictionary<string, string>()
+        {
+            {"Awake","_EnterTree" },
+            { "Start", "_Ready" },
+            {"Update", "_Process" }
+        };
+
+        /// <summary>
+        /// A dictionary that maps Unity array types
+        /// to their closest equivalents. 
+        /// </summary>
+        private static readonly Dictionary<string, string> ArrayTypeMapping = new Dictionary<string, string>()
+        {
+            {"Sprite","Texture2D" },
+            { "SpriteRenderer","Sprite2D" },
+        };
 
         /// <summary>
         /// Converts Unity C# code to Godot C# code.
@@ -58,6 +87,8 @@ namespace ConversionLogic
         /// <returns>The modified syntax node.</returns>
         public override SyntaxNode VisitClassDeclaration(ClassDeclarationSyntax node)
         {
+            // TODO: Add a disclaimer about some things needing updating 
+
             // Check if the class is extending a Unity base class.
             if (BaseClassMapping.TryGetValue(node!.BaseList?.Types.FirstOrDefault()?.Type.ToString(), out string godotBaseClass))
             {
@@ -65,6 +96,9 @@ namespace ConversionLogic
                 node = node.WithBaseList(SyntaxFactory.BaseList(SyntaxFactory.SingletonSeparatedList<BaseTypeSyntax>(
                     SyntaxFactory.SimpleBaseType(SyntaxFactory.ParseTypeName(godotBaseClass)))));
             }
+
+            // Add the 'partial' keyword to class modifiers.
+            node = node.WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.PartialKeyword)));
 
             // Continue visiting other nodes in the class.
             return base.VisitClassDeclaration(node);
@@ -96,38 +130,31 @@ namespace ConversionLogic
         /// <returns>The modified syntax node.</returns>
         public override SyntaxNode VisitMethodDeclaration(MethodDeclarationSyntax node)
         {
-            // Convert Unity's Start() method to Godot's _Ready() method.
-            if (node.Identifier.Text == "Start")
+            string originalMethodName = node.Identifier.Text.ToString();
+            if (MethodMapping.TryGetValue(originalMethodName, out string godotMethod))
             {
                 node = node
-                 .WithModifiers(SyntaxFactory.TokenList(
-                     SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                     SyntaxFactory.Token(SyntaxKind.OverrideKeyword)))
-                 .WithIdentifier(SyntaxFactory.Identifier("_Ready"));
-            }
+                .WithModifiers(SyntaxFactory.TokenList(
+                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                    SyntaxFactory.Token(SyntaxKind.OverrideKeyword)))
+                .WithIdentifier(SyntaxFactory.Identifier(godotMethod));
 
-            // Convert Unity's Update method to Godot's _Process method.
-            else if (node.Identifier.Text == "Update")
-            {
-                node = node
-               .WithModifiers(SyntaxFactory.TokenList(
-                   SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                   SyntaxFactory.Token(SyntaxKind.OverrideKeyword)))
-               .WithIdentifier(SyntaxFactory.Identifier("_Process"));
-            }
+                // Add a parameter of type double if it's the Update method
+                if (originalMethodName == "Update")
+                {
+                    // Create a parameter with type double
+                    var parameter = SyntaxFactory.Parameter(SyntaxFactory.Identifier("deltaTime"))
+                                                    .WithType(SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.DoubleKeyword)));
 
-            // Convert Unity's Update method to Godot's _Process method.
-            else if (node.Identifier.Text == "Awake")
-            {
-                node = node
-               .WithModifiers(SyntaxFactory.TokenList(
-                   SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                   SyntaxFactory.Token(SyntaxKind.OverrideKeyword)))
-               .WithIdentifier(SyntaxFactory.Identifier("_EnterTree"));
+                    // Add the parameter to the method's parameter list
+                    node = node.AddParameterListParameters(parameter);
+                }
             }
 
             // Visit the method body and replace "Debug.Log" with "GD.Print"
             var newBody = (BlockSyntax)Visit(node.Body);
+
+
 
             // Update the method body
             return node.WithBody(newBody);
@@ -158,6 +185,104 @@ namespace ConversionLogic
         }
 
         /// <summary>
+        /// Overrides the method to handle array expressions and replaces Unity-specific access with Godot ones
+        /// </summary>
+        /// <param name="node">An array expression</param>
+        /// <returns></returns>
+        public override SyntaxNode VisitArrayCreationExpression(ArrayCreationExpressionSyntax node)
+        {
+            var originalTypeName = node.GetType().Name;
+            // Process array type here
+            if (ArrayTypeMapping.TryGetValue(originalTypeName, out string godotType))
+            {
+                node = node.WithType(SyntaxFactory.ArrayType(SyntaxFactory.ParseTypeName(godotType)));
+            }
+
+            // Call base implementation to continue visiting other nodes
+            return base.VisitArrayCreationExpression(node);
+        }
+
+
+        /// <summary>
+        /// Overrides the method to handle array expressions and replaces Unity-specific access with Godot ones
+        /// </summary>
+        /// <param name="node">An array expression</param>
+        /// <returns></returns>
+        public override SyntaxNode VisitArrayType(ArrayTypeSyntax node)
+        {
+            var originalTypeName = node.ElementType.ToString();
+            // Process array type here
+            if (ArrayTypeMapping.TryGetValue(originalTypeName, out string godotType))
+            {
+                node = node.WithElementType(SyntaxFactory.ParseTypeName(godotType));
+            }
+
+            // Call base implementation to continue visiting other nodes
+            return base.VisitArrayType(node);
+        }
+
+        public override SyntaxNode VisitFieldDeclaration(FieldDeclarationSyntax node)
+        {
+            var originalType = node.Declaration.Type.ToString();
+
+            if (ArrayTypeMapping.TryGetValue(originalType, out string godotType))
+            {
+                var newType = SyntaxFactory.ParseTypeName(godotType);
+                // Replace the original type with the new type
+                var newDeclaration = node.Declaration.WithType(newType);
+                // Create a new field declaration with the updated type
+                var newFieldDeclaration = node.WithDeclaration(newDeclaration);
+
+                // Return the modified field declaration
+                return newFieldDeclaration;
+
+            }
+            // If the field declaration doesn't match, return the original node
+            return base.VisitFieldDeclaration(node);
+        }
+
+        public override SyntaxNode VisitAssignmentExpression(AssignmentExpressionSyntax node)
+        {
+            // Check if the assignment is to enable/disable a node
+            if (node.Left is MemberAccessExpressionSyntax memberAccess &&
+                memberAccess.Name.Identifier.Text == "enabled")
+            {
+                // Check if the left side of the assignment is a member access expression
+                if (memberAccess.Expression is IdentifierNameSyntax identifier)
+                {
+                    // Get the name of the variable being assigned
+                    string variableName = identifier.Identifier.Text;
+
+
+                    ExpressionSyntax invertedValue = SyntaxFactory.ParseExpression($"!{node.Right}");
+                    if (node.Right.GetText().ToString() == "true")
+                    {
+                        invertedValue = SyntaxFactory.LiteralExpression(SyntaxKind.FalseLiteralExpression);
+                    }
+                    else if (node.Right.GetText().ToString() == "false")
+                    {
+                        invertedValue = SyntaxFactory.LiteralExpression(SyntaxKind.TrueLiteralExpression);
+                    }
+
+                    // Create the new method invocation expression
+                    var newMethodInvocation = SyntaxFactory.InvocationExpression(
+                        SyntaxFactory.MemberAccessExpression(
+                            SyntaxKind.SimpleMemberAccessExpression,
+                            SyntaxFactory.IdentifierName(variableName),
+                            SyntaxFactory.IdentifierName("SetDisabled")),
+                        SyntaxFactory.ArgumentList(SyntaxFactory.SingletonSeparatedList(
+                            SyntaxFactory.Argument(invertedValue))));
+
+                    // Return the new method invocation expression
+                    return newMethodInvocation;
+                }
+            }
+
+            // Visit other types of assignment expressions
+            return base.VisitAssignmentExpression(node);
+        }
+
+        /// <summary>
         /// Overrides the method to handle invocation expressions and replaces
         /// Unity specific calls with Godot ones
         /// </summary>
@@ -182,9 +307,9 @@ namespace ConversionLogic
                         String newExpression = "";
                         foreach (String expressionPart in expressionParts)
                         {
-                            if (VariableMapping.ContainsKey(expressionPart))
+                            if (VariableMapping.TryGetValue(expressionPart, out string? value))
                             {
-                                newExpression += (VariableMapping[expressionPart] + ".");
+                                newExpression += value + ".";
                             }
                             else
                             {
@@ -212,21 +337,34 @@ namespace ConversionLogic
                     return SyntaxFactory.ParseExpression($"GD.Print{args}");
                 }
             }
-            // Check if it's a GetComponent call
-            if (node.Expression.ToString() == "GetComponent")
+
+            else if (node.Expression is GenericNameSyntax genericName)
             {
-                // Get the type argument from GetComponent<T>()
-                TypeSyntax typeArgument = args.Arguments.FirstOrDefault()?.Expression as TypeSyntax;
-
-                if (typeArgument != null)
+                // Check if it's a GetComponent call
+                if (genericName.GetText().ToString().Trim().StartsWith("GetComponent"))
                 {
-                    // Replace with GetNode<T>("PathToNode")
-                    string typeName = typeArgument.ToString();
-                    string newNodeExpression = $"GetNode<{typeName}>(\"PathToNode\")";
+                    // Get the type argument from GetComponent<T>()
+                    // Access the list of type arguments (e.g., "T")
+                    SeparatedSyntaxList<TypeSyntax> typeArguments = genericName.TypeArgumentList.Arguments;
 
-                    // Create a new expression
+                    List<string> types = new List<string>();
+                    foreach (TypeSyntax typeArgument in typeArguments)
+                    {
+                        string typeName = typeArgument.ToString();
+                        if (ArrayTypeMapping.TryGetValue(typeName, out string godotType))
+                        {
+                            typeName = godotType;
+                        }
+                        types.Add(typeName);
+                    }
+
+                    // Remove any empty members from the list
+                    types.RemoveAll(string.IsNullOrEmpty);
+
+                    string newNodeExpression = $"GetNode<{String.Join(",", types)}>(\".\")";
                     return SyntaxFactory.ParseExpression(newNodeExpression);
                 }
+
             }
             return base.VisitInvocationExpression(node);
         }
