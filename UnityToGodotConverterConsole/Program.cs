@@ -13,23 +13,34 @@ namespace UnityToGodotConverterConsole
         /// <param name="args">Command-line arguments.</param>
         private static void Main(string[] args)
         {
-            // Create a Unity to Godot converter instance
-            var converter = new UnityToGodotConverter();
 
             string filePath;
-
-            // Check if the correct number of arguments is provided
             if (args.Length != 1)
             {
                 // Prompt the user for input if no argument is provided
-                Console.Write("Enter the path to the C# file: ");
-                filePath = Console.ReadLine();
+                //Console.Write("Enter the path to the C# file: ");
+                Console.Write("Enter the path to the Scene file: ");
+                filePath = Console.ReadLine().Replace("\"", "");
             }
             else
             {
                 // Get the file path from command-line arguments
                 filePath = args[0];
             }
+
+
+            var sceneReader = new UnitySceneReader();
+
+            sceneReader.ReadFile(filePath);
+
+            /*
+            // Create a Unity to Godot converter instance
+            var converter = new UnityToGodotScriptConverter();
+
+           
+
+            // Check if the correct number of arguments is provided
+            
 
             // Check if the file exists
             if (!File.Exists(filePath))
@@ -67,6 +78,7 @@ namespace UnityToGodotConverterConsole
             {
                 Console.WriteLine($"An error occurred: {e.Message}");
             }
+            */
         }
     }
 }

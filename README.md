@@ -27,32 +27,32 @@ This tool is designed to help you convert Unity scripts to Godot scripts, making
 
 2. Navigate to the project folder:
 
-  ```bash
-    cd unity-to-godot-converter
-  ```
+```bash
+  cd unity-to-godot-converter
+```
 
 3. Build the project:
 
-  ```bash
-    dotnet build
-  ```
+```bash
+  dotnet build
+```
 
 ### Usage
 
 1. Either build the build the application or download a binary
 2. Run the converter (Assuming Windows is being used)
 
-  ```bash
-    .\UnityToGodotConverterConsole.exe
-  ```
+```bash
+  .\UnityToGodotConverterConsole.exe
+```
 
-  or 
+or
 
-  ```bash
-    .\UnityToGodotConverterConsole.exe <Path to your Unity C# file>
-  ```
+```bash
+  .\UnityToGodotConverterConsole.exe <Path to your Unity C# file>
+```
 
-3. The converted file will be in the same place as the source file but end in an "_Godot.cs" filename.
+3. The converted file will be in the same place as the source file but end in an "\_Godot.cs" filename.
 
 4. Manually fix any errors that occurred.
 
@@ -71,3 +71,7 @@ Contributions are welcome! Feel free to open issues, submit pull requests, or pr
 ### License
 
 This project is licensed under the GPLv3 License - see the [LICENSE](LICENSE) file for details.
+
+### Special Thanks
+
+DerrFunk for this [parser](https://gist.github.com/derFunk/795d7a366627d59e0dbd/revisions)

@@ -32,7 +32,7 @@ namespace ConversionTests
             string unityCode = File.ReadAllText(inputFilePath);
             string expectedGodotCode = File.ReadAllText(expectedFilePath);
 
-            var converter = new UnityToGodotConverter();
+            var converter = new UnityToGodotScriptConverter();
 
             // Act: Perform the conversion.
             string godotCode = converter.ConvertUnityCodeToGodot(unityCode);
